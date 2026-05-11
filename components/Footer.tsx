@@ -28,7 +28,7 @@ export default function Footer() {
           <div>
             <h4 className="text-xs tracking-[0.2em] uppercase text-gray-400 mb-4">Follow Us</h4>
             <div className="flex flex-col gap-2">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 transition">
+              <a href="https://www.instagram.com/bejeweledbymdj/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 transition">
                 Instagram
               </a>
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 transition">
