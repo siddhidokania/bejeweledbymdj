@@ -25,6 +25,12 @@ export default defineType({
       validation: (Rule) => Rule.required().positive(),
     }),
     defineField({
+      name: 'originalPrice',
+      title: 'Original Price / MRP (₹)',
+      type: 'number',
+      description: 'Leave empty if no discount',
+    }),
+    defineField({
       name: 'weight',
       title: 'Weight (grams)',
       type: 'number',

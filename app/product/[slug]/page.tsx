@@ -13,6 +13,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) return notFound()
 
+  const discount = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -25,7 +29,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.gender === 'women' ? "Women's" : "Men's"} · {product.subcategory}
           </p>
           <h1 className="text-3xl font-serif text-gray-900 mb-4">{product.name}</h1>
-          <p className="text-2xl text-gray-900 mb-2">₹{product.price.toLocaleString('en-IN')}</p>
+
+          {/* Price */}
+          <div className="flex items-center gap-3 mb-2">
+            <p className="text-2xl text-gray-900 font-medium">₹{product.price.toLocaleString('en-IN')}</p>
+            {product.originalPrice && (
+              <>
+                <p className="text-lg text-gray-400 line-through">₹{product.originalPrice.toLocaleString('en-IN')}</p>
+                <p className="text-sm text-red-500 font-medium">{discount}% off</p>
+              </>
+            )}
+          </div>
+
           <p className="text-sm text-gray-400 mb-6">Weight: {product.weight}g</p>
           <p className="text-gray-600 leading-relaxed mb-8">{product.description}</p>
 
