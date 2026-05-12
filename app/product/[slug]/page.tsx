@@ -1,7 +1,7 @@
-import { client, urlFor } from '@/lib/sanity'
+import { client } from '@/lib/sanity'
 import { Product } from '@/types'
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import ImageGallery from '@/components/ImageGallery'
 
 async function getProduct(slug: string): Promise<Product> {
   return client.fetch(`*[_type == "product" && slug.current == $slug][0]`, { slug })
@@ -16,18 +16,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Images */}
-        <div className="aspect-square bg-gray-100 overflow-hidden">
-          {product.images?.[0] && (
-            <Image
-              src={urlFor(product.images[0]).width(800).height(800).url()}
-              alt={product.name}
-              width={800}
-              height={800}
-              className="w-full h-full object-cover"
-            />
-          )}
-        </div>
+        {/* Image Gallery */}
+        <ImageGallery images={product.images} name={product.name} />
 
         {/* Details */}
         <div className="flex flex-col justify-center">
