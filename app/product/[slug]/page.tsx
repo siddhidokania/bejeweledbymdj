@@ -3,9 +3,22 @@ import { Product } from '@/types'
 import { notFound } from 'next/navigation'
 import ImageGallery from '@/components/ImageGallery'
 import AddToCartButton from '@/components/AddToCartButton'
+import ProductCard from '@/components/ProductCard'
+import Link from 'next/link'
 
 async function getProduct(slug: string): Promise<Product> {
   return client.fetch(`*[_type == "product" && slug.current == $slug][0]`, { slug })
+}
+
+async function getRelatedProducts(product: Product): Promise<Product[]> {
+  return client.fetch(
+    `*[_type == "product" && slug.current != $slug && (subcategory == $subcategory || gender == $gender)][0...4]`,
+    {
+      slug: product.slug.current,
+      subcategory: product.subcategory,
+      gender: product.gender,
+    }
+  )
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -13,6 +26,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProduct(slug)
 
   if (!product) return notFound()
+
+  const related = await getRelatedProducts(product)
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -41,6 +56,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <AddToCartButton product={product} />
         </div>
       </div>
+
+      {/* Related Products */}
+      {related.length > 0 && (
+        <div className="mt-24">
+          <div className="text-center mb-10">
+            <p className="text-xs tracking-[0.3em] text-gray-400 uppercase mb-2">You May Also Like</p>
+            <h2 className="text-3xl font-serif text-gray-900">Related Pieces</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {related.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link
+              href="/shop"
+              className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-900 hover:text-white transition"
+            >
+              VIEW ALL
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
