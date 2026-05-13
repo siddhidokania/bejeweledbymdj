@@ -1,11 +1,16 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
+
 import SearchBar from './SearchBar'
+import { useCart } from '@/lib/cartContext'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { totalItems } = useCart()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -27,19 +32,29 @@ export default function Navbar() {
         {/* Search + Cart */}
         <div className="hidden md:flex items-center gap-4">
           <SearchBar />
-          <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition flex-shrink-0">
+          <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition flex-shrink-0 relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
+            {mounted && totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
         </div>
 
         {/* Mobile: Cart + Hamburger */}
         <div className="flex md:hidden items-center gap-4">
-          <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition">
+          <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
+            {mounted && totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
           <button className="text-gray-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? (
