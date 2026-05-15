@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/studio/',
     },
-    sitemap: 'https://bejeweled.in/sitemap.xml',
+    sitemap: 'https://bejeweledbymdj.vercel.app/sitemap.xml',
   }
 }
