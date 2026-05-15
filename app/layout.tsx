@@ -4,6 +4,7 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { CartProvider } from '@/lib/cartContext'
+import WhatsAppButton from '@/components/WhatsAppButton'
 
 const geist = Geist({ subsets: ['latin'] })
 
@@ -50,6 +51,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <WhatsAppButton />
         </CartProvider>
       </body>
     </html>
