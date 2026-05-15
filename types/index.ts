@@ -23,3 +23,12 @@ export interface Banner {
   active: boolean
   order: number
 }
+
+export interface Review {
+  _id: string
+  reviewerName: string
+  rating: number
+  comment?: string
+  approved: boolean
+  createdAt: string
+}

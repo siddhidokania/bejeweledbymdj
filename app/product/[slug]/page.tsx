@@ -1,9 +1,10 @@
 import { client } from '@/lib/sanity'
-import { Product } from '@/types'
+import { Product, Review } from '@/types'
 import { notFound } from 'next/navigation'
 import ImageGallery from '@/components/ImageGallery'
 import AddToCartButton from '@/components/AddToCartButton'
 import ProductCard from '@/components/ProductCard'
+import ProductReviews from '@/components/ProductReviews'
 import Link from 'next/link'
 
 async function getProduct(slug: string): Promise<Product> {
@@ -21,13 +22,23 @@ async function getRelatedProducts(product: Product): Promise<Product[]> {
   )
 }
 
+async function getReviews(productId: string): Promise<Review[]> {
+  return client.fetch(
+    `*[_type == "review" && product._ref == $productId && approved == true] | order(createdAt desc)`,
+    { productId }
+  )
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const product = await getProduct(slug)
 
   if (!product) return notFound()
 
-  const related = await getRelatedProducts(product)
+  const [related, reviews] = await Promise.all([
+    getRelatedProducts(product),
+    getReviews(product._id),
+  ])
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -79,6 +90,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       )}
+
+      {/* Reviews */}
+      <ProductReviews reviews={reviews} productId={product._id} />
     </div>
   )
 }
