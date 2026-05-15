@@ -89,6 +89,12 @@ export default defineType({
       initialValue: true,
     }),
     defineField({
+      name: 'stock',
+      title: 'Stock Quantity',
+      type: 'number',
+      description: 'Number of items available. Leave blank if unlimited.',
+    }),
+    defineField({
       name: 'featured',
       title: 'Featured on Homepage',
       type: 'boolean',
