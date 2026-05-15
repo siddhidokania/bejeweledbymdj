@@ -12,3 +12,14 @@ export interface Product {
   inStock: boolean
   featured: boolean
 }
+
+export interface Banner {
+  _id: string
+  title: string
+  subtitle?: string
+  image: any
+  buttonText?: string
+  buttonLink?: string
+  active: boolean
+  order: number
+}

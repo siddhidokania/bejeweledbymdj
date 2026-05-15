@@ -1,43 +1,47 @@
 import Link from 'next/link'
 import { client } from '@/lib/sanity'
-import { Product } from '@/types'
+import { Product, Banner } from '@/types'
 import ProductCard from '@/components/ProductCard'
+import HeroBanner from '@/components/HeroBanner'
 
 async function getFeaturedProducts(): Promise<Product[]> {
-  const products = await client.fetch(`*[_type == "product" && featured == true][0...4]`)
-  console.log('Featured products:', products)
-  return products
+  return client.fetch(`*[_type == "product" && featured == true][0...4]`)
+}
+
+async function getBanners(): Promise<Banner[]> {
+  return client.fetch(`*[_type == "banner" && active == true] | order(order asc)`)
 }
 
 export default async function HomePage() {
-  const featured = await getFeaturedProducts()
+  const [featured, banners] = await Promise.all([
+    getFeaturedProducts(),
+    getBanners(),
+  ])
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-4 bg-[#faf9f7]">
-        <p className="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4">Handcrafted Silver Jewellery</p>
-        <h1 className="text-5xl md:text-7xl font-serif text-gray-900 mb-6 leading-tight">
-          Wear Your <br /> Story
-        </h1>
-        <p className="text-gray-500 max-w-md mb-10 leading-relaxed">
-          Each piece is thoughtfully crafted in sterling silver — timeless designs for everyday elegance.
-        </p>
-        <div className="flex gap-4">
-          <Link
-            href="/shop"
-            className="bg-gray-900 text-white px-8 py-3 text-sm tracking-widest hover:bg-gray-700 transition"
-          >
-            SHOP NOW
-          </Link>
-          <Link
-            href="/about"
-            className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-100 transition"
-          >
-            OUR STORY
-          </Link>
-        </div>
-      </section>
+      {/* Hero Banner (from Sanity) or default hero */}
+      {banners.length > 0 ? (
+        <HeroBanner banners={banners} />
+      ) : (
+        <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-4 bg-[#faf9f7]">
+          <p className="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4">Handcrafted Silver Jewellery</p>
+          <h1 className="text-5xl md:text-7xl font-serif text-gray-900 mb-6 leading-tight">
+            Wear Your <br /> Story
+          </h1>
+          <p className="text-gray-500 max-w-md mb-10 leading-relaxed">
+            Each piece is thoughtfully crafted in sterling silver — timeless designs for everyday elegance.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/shop" className="bg-gray-900 text-white px-8 py-3 text-sm tracking-widest hover:bg-gray-700 transition">
+              SHOP NOW
+            </Link>
+            <Link href="/about" className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-100 transition">
+              OUR STORY
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Featured Products */}
       {featured.length > 0 && (
@@ -52,10 +56,7 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="text-center mt-12">
-            <Link
-              href="/shop"
-              className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-900 hover:text-white transition"
-            >
+            <Link href="/shop" className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-900 hover:text-white transition">
               VIEW ALL
             </Link>
           </div>
