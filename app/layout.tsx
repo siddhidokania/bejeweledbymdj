@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   },
   description: 'Shop handcrafted sterling silver jewellery for women and men. Rings, necklaces, earrings, bracelets and more. Made with love in India.',
   keywords: ['silver jewellery', 'handcrafted jewellery', 'sterling silver', 'silver rings', 'silver necklaces', 'silver earrings', 'Indian jewellery'],
+  verification: {
+    google: 'ADKsBbLHlJw_4pHVK2yaTRFzgagbwPFV06Q-yyoLEoo',
+  },
   openGraph: {
     title: 'BeJeweled — Handcrafted Silver Jewellery',
     description: 'Shop handcrafted sterling silver jewellery for women and men.',
