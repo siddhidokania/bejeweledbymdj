@@ -8,12 +8,18 @@ import ProductReviews from '@/components/ProductReviews'
 import Link from 'next/link'
 
 async function getProduct(slug: string): Promise<Product> {
-  return client.fetch(`*[_type == "product" && slug.current == $slug][0]`, { slug })
+  return client.fetch(`*[_type == "product" && slug.current == $slug][0]{
+    _id, name, slug, price, originalPrice, weight, gender, subcategory,
+    images, description, inStock, featured, stock
+  }`, { slug })
 }
 
 async function getRelatedProducts(product: Product): Promise<Product[]> {
   return client.fetch(
-    `*[_type == "product" && slug.current != $slug && (subcategory == $subcategory || gender == $gender)][0...4]`,
+    `*[_type == "product" && slug.current != $slug && (subcategory == $subcategory || gender == $gender)][0...4]{
+      _id, name, slug, price, originalPrice, weight, gender, subcategory,
+      images, description, inStock, featured, stock
+    }`,
     {
       slug: product.slug.current,
       subcategory: product.subcategory,
@@ -44,6 +50,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null
 
+  const isOutOfStock = (product.stock !== null && product.stock !== undefined && product.stock === 0) || product.inStock === false
+  const isLowStock = product.stock !== undefined && product.stock !== null && product.stock > 0 && product.stock <= 5
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -53,6 +62,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.gender === 'women' ? "Women's" : "Men's"} · {product.subcategory}
           </p>
           <h1 className="text-3xl font-serif text-gray-900 mb-4">{product.name}</h1>
+
           <div className="flex items-center gap-3 mb-2">
             <p className="text-2xl text-gray-900 font-medium">₹{product.price.toLocaleString('en-IN')}</p>
             {product.originalPrice && (
@@ -62,9 +72,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </>
             )}
           </div>
-          <p className="text-sm text-gray-400 mb-6">Weight: {product.weight}g</p>
+
+          <p className="text-sm text-gray-400 mb-4">Weight: {product.weight}g</p>
+
+          {/* Stock Badge */}
+          {isOutOfStock && (
+            <p className="text-sm font-semibold text-gray-500 bg-gray-100 inline-block px-3 py-1 rounded-full mb-4 w-fit">
+              Out of Stock
+            </p>
+          )}
+          {isLowStock && (
+            <p className="text-sm font-semibold text-red-500 bg-red-50 inline-block px-3 py-1 rounded-full mb-4 w-fit">
+              ⚠️ Only {product.stock} left — order soon!
+            </p>
+          )}
+
           <p className="text-gray-600 leading-relaxed mb-8">{product.description}</p>
-          <AddToCartButton product={product} />
+
+          <AddToCartButton product={product} disabled={isOutOfStock} />
         </div>
       </div>
 
