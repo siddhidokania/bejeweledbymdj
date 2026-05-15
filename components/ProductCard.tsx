@@ -34,6 +34,11 @@ export default function ProductCard({ product }: { product: Product }) {
       <h3 className="text-sm font-medium text-gray-900 mb-1">{product.name}</h3>
       <div className="flex items-center gap-2">
         <p className="text-sm text-gray-900 font-medium">₹{product.price.toLocaleString('en-IN')}</p>
+        {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+          <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+            Only {product.stock} left!
+          </span>
+        )}
         {product.originalPrice && (
           <>
             <p className="text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString('en-IN')}</p>

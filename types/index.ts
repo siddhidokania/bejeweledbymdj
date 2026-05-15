@@ -10,6 +10,7 @@ export interface Product {
   images: any[]
   description: string
   inStock: boolean
+  stock?: number
   featured: boolean
 }
 

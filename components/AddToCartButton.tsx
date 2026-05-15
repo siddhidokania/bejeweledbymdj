@@ -5,7 +5,7 @@ import { Product } from '@/types'
 import { urlFor } from '@/lib/sanity'
 import { useState } from 'react'
 
-export default function AddToCartButton({ product }: { product: Product }) {
+export default function AddToCartButton({ product, disabled = false }: { product: Product; disabled?: boolean }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
@@ -23,7 +23,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 2000)
   }
 
-  if (!product.inStock) {
+  if (disabled || !product.inStock) {
     return (
       <button disabled className="bg-gray-200 text-gray-400 px-8 py-4 text-sm tracking-widest cursor-not-allowed w-full">
         OUT OF STOCK
