@@ -1,11 +1,20 @@
-import { client } from '@/lib/sanity'
+import { createClient } from '@sanity/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
+const readClient = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+  apiVersion: '2024-01-01',
+  token: process.env.SANITY_WRITE_TOKEN,
+  useCdn: false,
+})
+
 async function getOrder(orderNumber: string) {
-  return client.fetch(
+  return readClient.fetch(
     `*[_type == "order" && orderNumber == $orderNumber][0]`,
-    { orderNumber }
+    { orderNumber },
+    { cache: 'no-store' }
   )
 }
 
@@ -64,7 +73,6 @@ export default async function OrderStatusPage({
       {!isCancelled ? (
         <div className="mb-12">
           <div className="flex items-center justify-between relative">
-            {/* Progress Line */}
             <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 z-0" />
             <div
               className="absolute top-5 left-0 h-0.5 bg-gray-900 z-0 transition-all duration-500"
@@ -73,12 +81,10 @@ export default async function OrderStatusPage({
                   `${(currentStatusIndex / (STATUSES.length - 1)) * 100}%`
               }}
             />
-
             {STATUSES.map((status, index) => {
               const info = STATUS_INFO[status]
               const isCompleted = index <= currentStatusIndex
               const isCurrent = index === currentStatusIndex
-
               return (
                 <div key={status} className="flex flex-col items-center gap-2 z-10">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition ${
@@ -97,8 +103,6 @@ export default async function OrderStatusPage({
               )
             })}
           </div>
-
-          {/* Current Status Description */}
           {order.orderStatus && STATUS_INFO[order.orderStatus] && (
             <div className="mt-8 text-center bg-gray-50 p-4">
               <p className="text-sm text-gray-600">
@@ -120,7 +124,9 @@ export default async function OrderStatusPage({
         <div className="mb-8 border border-gray-100 p-6">
           <h2 className="text-sm font-medium text-gray-900 mb-3">Tracking Information</h2>
           <div className="flex flex-col gap-2 text-sm text-gray-600">
-            {order.courierName && <p>Courier: <span className="text-gray-900">{order.courierName}</span></p>}
+            {order.courierName && (
+              <p>Courier: <span className="text-gray-900">{order.courierName}</span></p>
+            )}
             <p>Tracking Number: <span className="text-gray-900 font-medium">{order.trackingNumber}</span></p>
             {order.trackingUrl && (
               
@@ -137,7 +143,6 @@ export default async function OrderStatusPage({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        {/* Customer Details */}
         <div className="border border-gray-100 p-6">
           <h2 className="text-sm font-medium text-gray-900 mb-4">Customer Details</h2>
           <div className="flex flex-col gap-1 text-sm text-gray-600">
@@ -146,8 +151,6 @@ export default async function OrderStatusPage({
             <p>{order.customer?.phone}</p>
           </div>
         </div>
-
-        {/* Shipping Address */}
         <div className="border border-gray-100 p-6">
           <h2 className="text-sm font-medium text-gray-900 mb-4">Shipping Address</h2>
           <div className="flex flex-col gap-1 text-sm text-gray-600">
