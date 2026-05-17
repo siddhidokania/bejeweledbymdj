@@ -1,6 +1,7 @@
 export interface Product {
   _id: string
   name: string
+  badge?: string
   slug: { current: string }
   price: number
   originalPrice?: number

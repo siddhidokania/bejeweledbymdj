@@ -3,6 +3,20 @@ import Image from 'next/image'
 import { Product } from '@/types'
 import { urlFor } from '@/lib/sanity'
 
+const BADGE_STYLES: Record<string, string> = {
+  new: 'bg-emerald-500 text-white',
+  bestseller: 'bg-amber-500 text-white',
+  limited: 'bg-purple-600 text-white',
+  staffpick: 'bg-blue-600 text-white',
+}
+
+const BADGE_LABELS: Record<string, string> = {
+  new: 'New Arrival',
+  bestseller: 'Bestseller',
+  limited: 'Limited Edition',
+  staffpick: 'Staff Pick',
+}
+
 export default function ProductCard({ product }: { product: Product }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -38,10 +52,25 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Discount Badge — hide when out of stock */}
-        {discount && !isOutOfStock && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 font-medium">
-            {discount}% OFF
+        {/* Top left — discount OR product badge (not both) */}
+        {!isOutOfStock && (
+          <>
+            {discount ? (
+              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 font-medium">
+                {discount}% OFF
+              </div>
+            ) : product.badge ? (
+              <div className={`absolute top-2 left-2 text-xs px-2 py-1 font-medium ${BADGE_STYLES[product.badge]}`}>
+                {BADGE_LABELS[product.badge]}
+              </div>
+            ) : null}
+          </>
+        )}
+
+        {/* Top right — product badge when discount is also showing */}
+        {!isOutOfStock && discount && product.badge && (
+          <div className={`absolute top-2 right-2 text-xs px-2 py-1 font-medium ${BADGE_STYLES[product.badge]}`}>
+            {BADGE_LABELS[product.badge]}
           </div>
         )}
       </div>

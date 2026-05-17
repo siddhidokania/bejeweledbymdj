@@ -100,5 +100,20 @@ export default defineType({
       type: 'boolean',
       initialValue: false,
     }),
+    defineField({
+      name: 'badge',
+      title: 'Product Badge',
+      type: 'string',
+      description: 'Optional badge shown on the product card',
+      options: {
+        list: [
+          { title: 'New Arrival', value: 'new' },
+          { title: 'Bestseller', value: 'bestseller' },
+          { title: 'Limited Edition', value: 'limited' },
+          { title: 'Staff Pick', value: 'staffpick' },
+        ],
+        layout: 'radio',
+      },
+    }),
   ],
 })
