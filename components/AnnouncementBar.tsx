@@ -7,7 +7,7 @@ const colorMap: Record<string, string> = {
   'bg-gray-900': '#111827',
   'bg-amber-600': '#d97706',
   'bg-rose-500': '#f43f5e',
-  'bg-blue-900': '#1e3a8a',
+  'bg-blue-900': '#2a3b5d',
   'bg-emerald-700': '#047857',
 }
 

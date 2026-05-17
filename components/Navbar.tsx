@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 import SearchBar from './SearchBar'
 import { useCart } from '@/lib/cartContext'
+import Image from 'next/image'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -14,11 +15,18 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
 
         {/* Logo */}
-        <Link href="/" className="text-2xl font-serif tracking-widest text-gray-900 flex-shrink-0">
-          BeJeweled
+        <Link href="/" className="flex-shrink-0">
+          <Image
+            src="/splash.png"
+            alt="BeJeweled"
+            width={130}
+            height={10}
+            className="object-contain"
+            priority
+          />
         </Link>
 
         {/* Desktop Nav */}
