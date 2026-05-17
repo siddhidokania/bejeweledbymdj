@@ -5,6 +5,8 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { CartProvider } from '@/lib/cartContext'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import AnnouncementBar from '@/components/AnnouncementBar'
+import { client } from '@/lib/sanity'
 
 const geist = Geist({ subsets: ['latin'] })
 
@@ -37,17 +39,40 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+async function getAnnouncement() {
+  return client.fetch(
+    `*[_type == "announcement" && active == true][0]{
+      message, linkText, linkUrl, bgColor
+    }`,
+    {},
+    { cache: 'no-store' }
+  )
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const announcement = await getAnnouncement()
+  console.log('ANNOUNCEMENT DATA:', announcement)
+
   return (
     <html lang="en">
       <body className={`${geist.className} bg-white text-gray-900`}>
         <CartProvider>
-          <Navbar />
-          <main className="pt-16">
+          <div className="fixed top-0 left-0 right-0 z-50">
+            {announcement && (
+              <AnnouncementBar
+                message={announcement.message}
+                linkText={announcement.linkText}
+                linkUrl={announcement.linkUrl}
+                bgColor={announcement.bgColor}
+              />
+            )}
+            <Navbar />
+          </div>
+          <main className="pt-24">
             {children}
           </main>
           <Footer />

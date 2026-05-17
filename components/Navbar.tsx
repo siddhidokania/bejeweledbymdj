@@ -13,7 +13,7 @@ export default function Navbar() {
   useEffect(() => setMounted(true), [])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
+    <nav className="bg-white border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
 
         {/* Logo */}
