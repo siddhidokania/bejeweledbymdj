@@ -55,15 +55,25 @@ export default function AccountPage() {
 
   async function fetchOrders(email: string) {
     try {
-      const res = await fetch(`/api/orders?email=${encodeURIComponent(email)}`)
-      const data = await res.json()
-      setOrders(data)
+        const res = await fetch(`/api/orders?email=${encodeURIComponent(email)}`)
+        if (!res.ok) {
+            setOrders([])
+            return
+        }
+        const text = await res.text()
+        if (!text) {
+            setOrders([])
+            return
+        }
+        const data = JSON.parse(text)
+        setOrders(data)
     } catch (err) {
-      console.error('Failed to fetch orders:', err)
+        console.error('Failed to fetch orders:', err)
+        setOrders([])
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
-  }
+    }
 
   if (!isLoaded || !user) {
     return (
