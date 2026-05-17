@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
+import Image from 'next/image'
 import SearchBar from './SearchBar'
 import { useCart } from '@/lib/cartContext'
-import Image from 'next/image'
+import { SignInButton, UserButton, useAuth } from '@clerk/nextjs'
 
 export default function Navbar() {
+  const { isSignedIn } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const { totalItems } = useCart()
   const [mounted, setMounted] = useState(false)
+
   useEffect(() => setMounted(true), [])
 
   return (
@@ -37,9 +39,31 @@ export default function Navbar() {
           <Link href="/contact" className="text-sm tracking-wide text-gray-600 hover:text-gray-900 transition">Contact</Link>
         </div>
 
-        {/* Search + Cart */}
+        {/* Search + Auth + Cart */}
         <div className="hidden md:flex items-center gap-4">
           <SearchBar />
+
+          {/* Auth */}
+          {mounted && (
+            <>
+              {!isSignedIn ? (
+                <SignInButton mode="redirect">
+                  <button className="text-sm text-gray-600 hover:text-gray-900 transition tracking-wide">
+                    Login
+                  </button>
+                </SignInButton>
+              ) : (
+                <>
+                  <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900 transition tracking-wide">
+                    Account
+                  </Link>
+                  <UserButton />
+                </>
+              )}
+            </>
+          )}
+
+          {/* Cart */}
           <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition flex-shrink-0 relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -52,8 +76,9 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile: Cart + Hamburger */}
+        {/* Mobile: Auth + Cart + Hamburger */}
         <div className="flex md:hidden items-center gap-4">
+          {mounted && isSignedIn && <UserButton />}
           <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -85,6 +110,18 @@ export default function Navbar() {
           <Link href="/shop" onClick={() => setMenuOpen(false)} className="text-sm tracking-wide text-gray-600 hover:text-gray-900">Shop</Link>
           <Link href="/about" onClick={() => setMenuOpen(false)} className="text-sm tracking-wide text-gray-600 hover:text-gray-900">About</Link>
           <Link href="/contact" onClick={() => setMenuOpen(false)} className="text-sm tracking-wide text-gray-600 hover:text-gray-900">Contact</Link>
+          {mounted && !isSignedIn && (
+            <SignInButton mode="redirect">
+              <button className="text-sm text-gray-600 hover:text-gray-900 tracking-wide text-left">
+                Login
+              </button>
+            </SignInButton>
+          )}
+          {mounted && isSignedIn && (
+            <Link href="/account" onClick={() => setMenuOpen(false)} className="text-sm text-gray-600 hover:text-gray-900">
+              Account
+            </Link>
+          )}
           <SearchBar />
         </div>
       )}

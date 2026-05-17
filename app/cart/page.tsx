@@ -93,9 +93,9 @@ export default function CartPage() {
           <p className="font-medium">₹{totalPrice.toLocaleString('en-IN')}</p>
         </div>
 
-        <button className="w-full bg-gray-900 text-white py-4 text-sm tracking-widest hover:bg-gray-700 transition mb-3">
+        <Link href="/checkout" className="w-full bg-gray-900 text-white py-4 text-sm tracking-widest hover:bg-gray-700 transition mb-3 block text-center">
           PROCEED TO CHECKOUT
-        </button>
+        </Link>
         <button onClick={clearCart} className="w-full border border-gray-200 py-3 text-sm text-gray-500 hover:border-gray-900 transition">
           Clear Cart
         </button>
