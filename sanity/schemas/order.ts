@@ -198,7 +198,7 @@ export default defineType({
       title: 'Internal Notes',
       type: 'text',
       rows: 2,
-      description: 'Private notes for you/your sister (not visible to customer)',
+      description: 'Private notes for you(not visible to customer)',
     }),
   ],
 
