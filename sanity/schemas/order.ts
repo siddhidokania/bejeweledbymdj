@@ -89,6 +89,12 @@ export default defineType({
       readOnly: true,
     }),
     defineField({
+      name: 'shippingFee',
+      title: 'Shipping Fee (₹)',
+      type: 'number',
+      readOnly: true,
+    }),
+    defineField({
       name: 'discount',
       title: 'Discount (₹)',
       type: 'number',

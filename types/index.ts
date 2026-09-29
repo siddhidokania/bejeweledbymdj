@@ -60,6 +60,7 @@ export interface Order {
   }
   items: OrderItem[]
   subtotal: number
+  shippingFee?: number
   discount: number
   couponCode?: string
   totalAmount: number

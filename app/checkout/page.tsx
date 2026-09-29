@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getShippingFee, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing'
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -45,7 +46,7 @@ export default function CheckoutPage() {
     }))
   }
 
-  const shippingFee = totalPrice >= 999 ? 0 : 99
+  const shippingFee = getShippingFee(totalPrice)
   const finalTotal = totalPrice + shippingFee
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
@@ -74,14 +75,12 @@ export default function CheckoutPage() {
             state: form.state,
             pincode: form.pincode,
           },
+          // Only IDs + quantities — the server looks up the real prices
           items: items.map(item => ({
             productId: item._id,
-            name: item.name,
             quantity: item.quantity,
-            price: item.price,
           })),
-          subtotal: totalPrice,
-          totalAmount: finalTotal,
+          expectedTotal: finalTotal,
           paymentMethod: form.paymentMethod,
           deliveryNotes: form.deliveryNotes,
         }),
@@ -331,7 +330,7 @@ export default function CheckoutPage() {
                 </p>
               </div>
               {shippingFee > 0 && (
-                <p className="text-xs text-gray-400">Free shipping on orders above ₹999</p>
+                <p className="text-xs text-gray-400">Free shipping on orders above ₹{FREE_SHIPPING_THRESHOLD}</p>
               )}
               <div className="flex justify-between font-medium text-base border-t border-gray-200 pt-3 mt-2">
                 <p>Total</p>

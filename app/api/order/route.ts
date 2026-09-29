@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
 import { generateOrderNumber } from '@/lib/generateOrderNumber'
 import { Resend } from 'resend'
+import { getShippingFee, MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -13,17 +14,21 @@ const writeClient = createClient({
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+interface PricedItem {
+  productId: string
+  name: string
+  quantity: number
+  price: number
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
       customer,
       shippingAddress,
-      items,
-      subtotal,
-      discount,
-      couponCode,
-      totalAmount,
+      items: requestedItems,
+      expectedTotal,
       paymentMethod,
       deliveryNotes,
     } = body
@@ -34,8 +39,58 @@ export async function POST(req: NextRequest) {
     if (!shippingAddress?.line1 || !shippingAddress?.pincode) {
       return NextResponse.json({ error: 'Missing shipping address' }, { status: 400 })
     }
-    if (!items || items.length === 0) {
+    if (!Array.isArray(requestedItems) || requestedItems.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 })
+    }
+    // Online payment isn't live yet, so COD is the only accepted method
+    if (paymentMethod !== 'cod') {
+      return NextResponse.json({ error: 'Only Cash on Delivery is available right now' }, { status: 400 })
+    }
+
+    // Merge duplicate lines and validate quantities
+    const quantities = new Map<string, number>()
+    for (const item of requestedItems) {
+      const qty = Number(item?.quantity)
+      if (typeof item?.productId !== 'string' || !Number.isInteger(qty) || qty < 1) {
+        return NextResponse.json({ error: 'Invalid item in cart' }, { status: 400 })
+      }
+      quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + qty)
+    }
+
+    // Prices always come from Sanity — never from the browser
+    const products: { _id: string; name: string; price: number; inStock?: boolean; stock?: number | null }[] =
+      await writeClient.fetch(
+        `*[_type == "product" && _id in $ids && !(_id in path("drafts.**"))]{ _id, name, price, inStock, stock }`,
+        { ids: [...quantities.keys()] }
+      )
+    const productMap = new Map(products.map(p => [p._id, p]))
+
+    const items: PricedItem[] = []
+    for (const [productId, quantity] of quantities) {
+      const product = productMap.get(productId)
+      if (!product) {
+        return NextResponse.json({ error: 'An item in your cart is no longer available. Please remove it and try again.' }, { status: 409 })
+      }
+      if (product.inStock === false || product.stock === 0) {
+        return NextResponse.json({ error: `${product.name} is out of stock. Please remove it from your cart.` }, { status: 409 })
+      }
+      const maxQty = Math.min(MAX_QUANTITY_PER_ITEM, product.stock ?? MAX_QUANTITY_PER_ITEM)
+      if (quantity > maxQty) {
+        return NextResponse.json({ error: `Only ${maxQty} of ${product.name} can be ordered.` }, { status: 409 })
+      }
+      items.push({ productId, name: product.name, quantity, price: product.price })
+    }
+
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+    const shippingFee = getShippingFee(subtotal)
+    const totalAmount = subtotal + shippingFee
+
+    // If prices changed since the customer loaded their cart, make them review before charging a different amount
+    if (Number(expectedTotal) !== totalAmount) {
+      return NextResponse.json(
+        { error: `Prices have changed since you added these items. Your new total is ₹${totalAmount.toLocaleString('en-IN')} — please review your cart.`, code: 'PRICE_CHANGED' },
+        { status: 409 }
+      )
     }
 
     const orderNumber = await generateOrderNumber()
@@ -47,7 +102,7 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
       customer,
       shippingAddress,
-      items: items.map((item: any) => ({
+      items: items.map((item) => ({
         _key: crypto.randomUUID(),
         product: { _type: 'reference', _ref: item.productId },
         productName: item.name,
@@ -55,10 +110,11 @@ export async function POST(req: NextRequest) {
         priceAtOrder: item.price,
       })),
       subtotal,
-      discount: discount || 0,
-      couponCode: couponCode || '',
+      shippingFee,
+      discount: 0,
+      couponCode: '',
       totalAmount,
-      paymentMethod: paymentMethod || 'razorpay',
+      paymentMethod,
       paymentStatus: 'pending',
       orderStatus: 'processing',
       deliveryNotes: deliveryNotes || '',
@@ -108,14 +164,15 @@ export async function POST(req: NextRequest) {
             </table>
 
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee;">
-              ${discount > 0 ? `
               <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                <span style="color: #555; font-size: 14px;">Discount ${couponCode ? `(${couponCode})` : ''}</span>
-                <span style="color: #16a34a; font-size: 14px;">-₹${discount.toLocaleString('en-IN')}</span>
-              </div>` : ''}
+                <span style="color: #555; font-size: 14px;">Subtotal</span>
+                <span style="font-size: 14px;">₹${subtotal.toLocaleString('en-IN')}</span>
+              </div>
               <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                 <span style="color: #555; font-size: 14px;">Shipping</span>
-                <span style="color: #16a34a; font-size: 14px;">Free</span>
+                ${shippingFee === 0
+                  ? '<span style="color: #16a34a; font-size: 14px;">Free</span>'
+                  : `<span style="font-size: 14px;">₹${shippingFee.toLocaleString('en-IN')}</span>`}
               </div>
               <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
                 <span style="font-weight: bold;">Total</span>
