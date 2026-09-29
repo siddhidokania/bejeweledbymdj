@@ -1,5 +1,5 @@
 import { createClient } from '@sanity/client'
-import { notFound } from 'next/navigation'
+import { currentUser } from '@clerk/nextjs/server'
 import Link from 'next/link'
 
 const readClient = createClient({
@@ -43,15 +43,46 @@ const STATUS_INFO: Record<string, { label: string; emoji: string; description: s
   },
 }
 
+// Order numbers are sequential (BJ-1001, BJ-1002…), so knowing one must not be enough to see
+// someone's address. Allow access with the secret link token, or when signed in as the customer.
+async function canViewOrder(order: { accessToken?: string; customer?: { email?: string } }, token?: string) {
+  if (token && order.accessToken && token === order.accessToken) return true
+  const user = await currentUser()
+  const email = user?.primaryEmailAddress?.emailAddress
+  return !!email && !!order.customer?.email && email.toLowerCase() === order.customer.email.toLowerCase()
+}
+
 export default async function OrderStatusPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orderNumber: string }>
+  searchParams: Promise<{ t?: string }>
 }) {
   const { orderNumber } = await params
+  const { t: token } = await searchParams
   const order = await getOrder(orderNumber)
 
-  if (!order) return notFound()
+  // Same response whether the order doesn't exist or isn't theirs, so order numbers can't be probed
+  if (!order || !(await canViewOrder(order, token))) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center">
+        <p className="text-4xl mb-4">🔒</p>
+        <h1 className="text-3xl font-serif text-gray-900 mb-4">View Your Order</h1>
+        <p className="text-gray-500 mb-8 leading-relaxed">
+          Please use the link from your order confirmation email, or sign in with the email address you used to place the order.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Link href={`/sign-in?redirect_url=${encodeURIComponent(`/order/${orderNumber}`)}`} className="bg-gray-900 text-white px-8 py-3 text-sm tracking-widest hover:bg-gray-700 transition">
+            SIGN IN
+          </Link>
+          <Link href="/contact" className="border border-gray-900 text-gray-900 px-8 py-3 text-sm tracking-widest hover:bg-gray-100 transition">
+            NEED HELP?
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const currentStatusIndex = STATUSES.indexOf(order.orderStatus)
   const isCancelled = order.orderStatus === 'cancelled'

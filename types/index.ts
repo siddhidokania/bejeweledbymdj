@@ -45,6 +45,7 @@ export interface OrderItem {
 export interface Order {
   _id: string
   orderNumber: string
+  accessToken?: string
   createdAt: string
   customer: {
     name: string

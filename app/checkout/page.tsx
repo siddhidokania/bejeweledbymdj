@@ -94,7 +94,7 @@ export default function CheckoutPage() {
       }
 
       clearCart()
-      router.push(`/order/${data.orderNumber}`)
+      router.push(`/order/${data.orderNumber}?t=${data.accessToken}`)
     } catch (err) {
       setError('Failed to place order. Please try again.')
     } finally {

@@ -13,6 +13,14 @@ export default defineType({
       readOnly: true,
     }),
     defineField({
+      name: 'accessToken',
+      title: 'Access Token',
+      type: 'string',
+      description: 'Secret part of the customer\'s order-status link',
+      readOnly: true,
+      hidden: true,
+    }),
+    defineField({
       name: 'createdAt',
       title: 'Order Date',
       type: 'datetime',

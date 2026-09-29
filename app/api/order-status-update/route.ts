@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
           <div style="text-align: center; padding: 20px; background: #111; color: #fff; margin-bottom: 24px;">
             <p style="margin: 0 0 12px; font-size: 14px;">Track your order anytime</p>
-            <a href="https://bejeweledbymdj.vercel.app/order/${order.orderNumber}"
+            <a href="https://bejeweledbymdj.vercel.app/order/${order.orderNumber}${order.accessToken ? `?t=${order.accessToken}` : ''}"
                style="background: #fff; color: #111; padding: 10px 24px; text-decoration: none; font-size: 12px; letter-spacing: 2px;">
               VIEW ORDER STATUS
             </a>
