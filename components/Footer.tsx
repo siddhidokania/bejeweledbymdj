@@ -32,9 +32,6 @@ export default function Footer() {
               <a href="https://www.instagram.com/bejeweledbymdj/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 transition">
                 Instagram
               </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 transition">
-                Facebook
-              </a>
             </div>
           </div>
 

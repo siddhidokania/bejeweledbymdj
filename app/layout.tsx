@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Geist, Cormorant_Garamond } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -10,7 +10,9 @@ import { client } from '@/lib/sanity'
 import { ClerkProvider } from '@clerk/nextjs'
 import { SITE_URL } from '@/lib/site'
 
-const geist = Geist({ subsets: ['latin'] })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
+// Used by every `font-serif` heading (wired up in globals.css)
+const cormorant = Cormorant_Garamond({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-cormorant' })
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -60,8 +62,8 @@ export default async function RootLayout({
   const announcement = await getAnnouncement()
 
   return (
-    <html lang="en">
-      <body className={`${geist.className} bg-white text-gray-900`}>
+    <html lang="en" className={`${geist.variable} ${cormorant.variable}`}>
+      <body className="font-sans bg-white text-gray-900">
         <ClerkProvider>
           <CartProvider>
             <div className="fixed top-0 left-0 right-0 z-50">
