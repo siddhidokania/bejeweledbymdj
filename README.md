@@ -8,7 +8,7 @@
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38bdf8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
 [![Sanity](https://img.shields.io/badge/Sanity-CMS-f03e2f?style=for-the-badge&logo=sanity)](https://www.sanity.io/)
 [![Clerk](https://img.shields.io/badge/Clerk-Auth-6c47ff?style=for-the-badge&logo=clerk)](https://clerk.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://vercel.com/)
@@ -117,7 +117,7 @@ bejeweled/
 │   ├── banner.ts
 │   ├── announcement.ts
 │   └── review.ts
-└── middleware.ts           # Clerk auth middleware
+└── proxy.ts                # Clerk auth (Next 16 proxy, formerly middleware)
 
 ---
 
@@ -149,11 +149,14 @@ npm run dev
 
 ### Environment Variables
 
+See [`.env.example`](.env.example) for the full list with explanations. In short:
+
 ```env
 # Sanity
 NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
 NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_WRITE_TOKEN=your_write_token
+SANITY_WEBHOOK_SECRET=secret_set_on_the_order_status_webhook
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
@@ -165,6 +168,11 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/account
 
 # Resend
 RESEND_API_KEY=your_resend_key
+EMAIL_FROM=            # blank until a domain is verified; then customers get emails
+SHOP_EMAIL=you@example.com
+
+# Site
+NEXT_PUBLIC_SITE_URL=https://bejeweledbymdj.vercel.app
 ```
 
 ---
