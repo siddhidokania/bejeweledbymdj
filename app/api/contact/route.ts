@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { escapeHtml as esc } from '@/lib/escapeHtml'
+import { EMAIL_FROM, SHOP_EMAIL } from '@/lib/email'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -23,8 +24,8 @@ export async function POST(request: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: 'BeJeweled Contact <onboarding@resend.dev>',
-      to: 'siddhidokania@gmail.com',
+      from: EMAIL_FROM,
+      to: SHOP_EMAIL,
       replyTo: email,
       // Subject is plain text, but strip newlines so it can't be split
       subject: `New message from ${name.replace(/[\r\n]+/g, ' ')} — BeJeweled`,

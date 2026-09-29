@@ -4,6 +4,7 @@ import { generateOrderNumber } from '@/lib/generateOrderNumber'
 import { Resend } from 'resend'
 import { getShippingFee, MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
 import { escapeHtml as esc } from '@/lib/escapeHtml'
+import { EMAIL_FROM, SHOP_EMAIL, CAN_EMAIL_CUSTOMERS, customerRecipient } from '@/lib/email'
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -194,8 +195,11 @@ export async function POST(req: NextRequest) {
 
     // The order is already saved — a failed email must not make the customer think it failed and order again
     await resend.emails.send({
-      from: 'BeJeweled <onboarding@resend.dev>',
-      to: 'siddhidokania@gmail.com', // until custom domain
+      from: EMAIL_FROM,
+      to: customerRecipient(customer.email),
+      // The shop always gets a copy of new orders
+      ...(CAN_EMAIL_CUSTOMERS ? { bcc: SHOP_EMAIL } : {}),
+      replyTo: SHOP_EMAIL,
       subject: `Order Confirmed — ${orderNumber} 🎉`,
       html: `
         <!DOCTYPE html>

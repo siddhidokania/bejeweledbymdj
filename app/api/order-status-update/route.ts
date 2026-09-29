@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { parseBody } from 'next-sanity/webhook'
 import { escapeHtml as esc, safeUrl } from '@/lib/escapeHtml'
+import { EMAIL_FROM, SHOP_EMAIL, customerRecipient } from '@/lib/email'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -69,8 +70,9 @@ export async function POST(req: NextRequest) {
     ` : ''
 
     await resend.emails.send({
-      from: 'BeJeweled <onboarding@resend.dev>',
-      to: 'siddhidokania@gmail.com', // change to order.customer.email after custom domain
+      from: EMAIL_FROM,
+      to: customerRecipient(order.customer.email),
+      replyTo: SHOP_EMAIL,
       subject: `${statusInfo.subject} — ${order.orderNumber}`,
       html: `
         <!DOCTYPE html>
