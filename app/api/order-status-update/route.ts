@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { parseBody } from 'next-sanity/webhook'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -28,7 +29,19 @@ const STATUS_INFO: Record<string, { subject: string; emoji: string; message: str
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    // Only Sanity may trigger these emails: verify the webhook's signed secret
+    const secret = process.env.SANITY_WEBHOOK_SECRET
+    if (!secret) {
+      console.error('SANITY_WEBHOOK_SECRET is not set — refusing webhook')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+    }
+    const { isValidSignature, body } = await parseBody<any>(req, secret, false)
+    if (isValidSignature !== true) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+    if (!body) {
+      return NextResponse.json({ error: 'Empty body' }, { status: 400 })
+    }
 
     // Sanity sends the full document in the webhook
     const order = body
