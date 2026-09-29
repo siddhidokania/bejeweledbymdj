@@ -48,14 +48,15 @@ export default function AccountPage() {
       router.push('/sign-in')
       return
     }
-    if (user?.primaryEmailAddress?.emailAddress) {
-      fetchOrders(user.primaryEmailAddress.emailAddress)
+    if (user) {
+      fetchOrders()
     }
   }, [isLoaded, user])
 
-  async function fetchOrders(email: string) {
+  async function fetchOrders() {
     try {
-        const res = await fetch(`/api/orders?email=${encodeURIComponent(email)}`)
+        // The server works out whose orders to return from the Clerk session
+        const res = await fetch('/api/orders')
         if (!res.ok) {
             setOrders([])
             return

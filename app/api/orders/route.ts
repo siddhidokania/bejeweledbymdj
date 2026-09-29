@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
+import { currentUser } from '@clerk/nextjs/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,13 +12,20 @@ const readClient = createClient({
   useCdn: false,
 })
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const email = request.nextUrl.searchParams.get('email')
-    if (!email) return NextResponse.json([])
+    // Only ever return the signed-in user's own orders — never trust an email from the URL
+    const user = await currentUser()
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!user || !email) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+    }
 
     const orders = await readClient.fetch(
-      `*[_type == "order" && customer.email == $email] | order(createdAt desc)`,
+      `*[_type == "order" && lower(customer.email) == lower($email)] | order(createdAt desc){
+        _id, orderNumber, createdAt, totalAmount, orderStatus, paymentStatus,
+        items[]{ productName, quantity, priceAtOrder }
+      }`,
       { email }
     )
 
