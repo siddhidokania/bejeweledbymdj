@@ -95,7 +95,9 @@ export default async function OrderStatusPage({
     <div className="max-w-3xl mx-auto px-4 py-16">
       {/* Header */}
       <div className="text-center mb-12">
-        <p className="text-xs tracking-[0.3em] text-gray-400 uppercase mb-2">Order Confirmed</p>
+        <p className="text-xs tracking-[0.3em] text-gray-400 uppercase mb-2">
+          {isCancelled ? 'Order Cancelled' : order.orderStatus === 'delivered' ? 'Order Delivered' : 'Order Confirmed'}
+        </p>
         <h1 className="text-4xl font-serif text-gray-900 mb-2">{order.orderNumber}</h1>
         <p className="text-gray-500">
           Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', {

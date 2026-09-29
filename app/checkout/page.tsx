@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cartContext'
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
@@ -37,14 +37,15 @@ export default function CheckoutPage() {
     paymentMethod: 'cod',
   })
 
-  // Update form when user loads
-  if (isLoaded && user && !form.name) {
+  // Pre-fill once the signed-in user loads, without overwriting anything already typed
+  useEffect(() => {
+    if (!isLoaded || !user) return
     setForm(prev => ({
       ...prev,
-      name: user.fullName || '',
-      email: user.primaryEmailAddress?.emailAddress || '',
+      name: prev.name || user.fullName || '',
+      email: prev.email || user.primaryEmailAddress?.emailAddress || '',
     }))
-  }
+  }, [isLoaded, user])
 
   const shippingFee = getShippingFee(totalPrice)
   const finalTotal = totalPrice + shippingFee
