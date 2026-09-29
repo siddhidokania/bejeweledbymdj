@@ -3,9 +3,11 @@
 import { useCart } from '@/lib/cartContext'
 import Image from 'next/image'
 import Link from 'next/link'
+import { getShippingFee, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
+  const shippingFee = getShippingFee(totalPrice)
 
   if (items.length === 0) {
     return (
@@ -84,13 +86,20 @@ export default function CartPage() {
           <p className="text-sm text-gray-600">Subtotal ({totalItems} items)</p>
           <p className="text-sm font-medium">₹{totalPrice.toLocaleString('en-IN')}</p>
         </div>
-        <div className="flex justify-between mb-6">
+        <div className="flex justify-between mb-2">
           <p className="text-sm text-gray-600">Shipping</p>
-          <p className="text-sm text-green-600">Free</p>
+          <p className={`text-sm ${shippingFee === 0 ? 'text-green-600' : ''}`}>
+            {shippingFee === 0 ? 'Free' : `₹${shippingFee}`}
+          </p>
         </div>
-        <div className="flex justify-between border-t border-gray-200 pt-4 mb-6">
+        {shippingFee > 0 && (
+          <p className="text-xs text-gray-400 mb-2">
+            Add ₹{(FREE_SHIPPING_THRESHOLD - totalPrice).toLocaleString('en-IN')} more for free shipping
+          </p>
+        )}
+        <div className="flex justify-between border-t border-gray-200 pt-4 mt-4 mb-6">
           <p className="font-medium">Total</p>
-          <p className="font-medium">₹{totalPrice.toLocaleString('en-IN')}</p>
+          <p className="font-medium">₹{(totalPrice + shippingFee).toLocaleString('en-IN')}</p>
         </div>
 
         <Link href="/checkout" className="w-full bg-gray-900 text-white py-4 text-sm tracking-widest hover:bg-gray-700 transition mb-3 block text-center">

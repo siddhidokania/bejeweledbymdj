@@ -336,7 +336,7 @@ export default function CheckoutPage() {
                 </p>
               </div>
               {shippingFee > 0 && (
-                <p className="text-xs text-gray-400">Free shipping on orders above ₹{FREE_SHIPPING_THRESHOLD}</p>
+                <p className="text-xs text-gray-400">Free shipping on orders of ₹{FREE_SHIPPING_THRESHOLD} and above</p>
               )}
               <div className="flex justify-between font-medium text-base border-t border-gray-200 pt-3 mt-2">
                 <p>Total</p>

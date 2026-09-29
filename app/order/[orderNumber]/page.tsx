@@ -84,6 +84,10 @@ export default async function OrderStatusPage({
     )
   }
 
+  // Older orders were saved before shippingFee existed — derive it from the totals
+  const shippingFee: number = order.shippingFee
+    ?? Math.max(0, (order.totalAmount ?? 0) - (order.subtotal ?? 0) + (order.discount ?? 0))
+
   const currentStatusIndex = STATUSES.indexOf(order.orderStatus)
   const isCancelled = order.orderStatus === 'cancelled'
 
@@ -223,7 +227,9 @@ export default async function OrderStatusPage({
         )}
         <div className="flex justify-between text-sm mb-2">
           <p className="text-gray-600">Shipping</p>
-          <p className="text-green-600">Free</p>
+          <p className={shippingFee === 0 ? 'text-green-600' : ''}>
+            {shippingFee === 0 ? 'Free' : `₹${shippingFee.toLocaleString('en-IN')}`}
+          </p>
         </div>
         <div className="flex justify-between font-medium text-base border-t border-gray-200 pt-3 mt-2">
           <p>Total</p>
