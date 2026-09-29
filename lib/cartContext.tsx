@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react'
+import { MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
 
 export interface CartItem {
   _id: string
@@ -10,6 +11,7 @@ export interface CartItem {
   image: string
   slug: string
   quantity: number
+  maxQuantity?: number // from stock when added; the server re-checks at checkout
 }
 
 interface CartContextType {
@@ -23,6 +25,10 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | null>(null)
+
+export function maxFor(item: CartItem): number {
+  return Math.min(MAX_QUANTITY_PER_ITEM, item.maxQuantity ?? MAX_QUANTITY_PER_ITEM)
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
@@ -42,8 +48,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => {
       const existing = prev.find(i => i._id === item._id)
       if (existing) {
+        // Refresh the limit with the latest stock we saw
+        const updated = { ...existing, maxQuantity: item.maxQuantity }
         return prev.map(i =>
-          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
+          i._id === item._id ? { ...updated, quantity: Math.min(existing.quantity + 1, maxFor(updated)) } : i
         )
       }
       return [...prev, { ...item, quantity: 1 }]
@@ -56,7 +64,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   function updateQuantity(id: string, quantity: number) {
     if (quantity < 1) return removeItem(id)
-    setItems(prev => prev.map(i => i._id === id ? { ...i, quantity } : i))
+    setItems(prev => prev.map(i => i._id === id ? { ...i, quantity: Math.min(quantity, maxFor(i)) } : i))
   }
 
   function clearCart() {

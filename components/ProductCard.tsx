@@ -22,7 +22,7 @@ export default function ProductCard({ product }: { product: Product }) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null
 
-  const isOutOfStock = product.inStock === false
+  const isOutOfStock = product.inStock === false || product.stock === 0
 
   return (
     <Link href={`/product/${product.slug.current}`} className="group">

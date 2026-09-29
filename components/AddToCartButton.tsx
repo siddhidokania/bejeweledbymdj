@@ -18,12 +18,13 @@ export default function AddToCartButton({ product, disabled = false }: { product
       image: product.images?.[0] ? urlFor(product.images[0]).width(200).height(200).url() : '',
       slug: product.slug.current,
       quantity: 1,
+      maxQuantity: typeof product.stock === 'number' ? product.stock : undefined,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
 
-  if (disabled || !product.inStock) {
+  if (disabled || product.inStock === false || product.stock === 0) {
     return (
       <button disabled className="bg-gray-200 text-gray-400 px-8 py-4 text-sm tracking-widest cursor-not-allowed w-full">
         OUT OF STOCK

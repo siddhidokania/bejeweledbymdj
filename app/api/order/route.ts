@@ -19,11 +19,22 @@ function clean(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
 }
 
+interface ProductRow {
+  _id: string
+  _rev: string
+  name: string
+  price: number
+  inStock?: boolean
+  stock?: number | null
+}
+
 interface PricedItem {
   productId: string
   name: string
   quantity: number
   price: number
+  rev: string
+  tracksStock: boolean
 }
 
 export async function POST(req: NextRequest) {
@@ -79,71 +90,98 @@ export async function POST(req: NextRequest) {
       quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + qty)
     }
 
-    // Prices always come from Sanity — never from the browser
-    const products: { _id: string; name: string; price: number; inStock?: boolean; stock?: number | null }[] =
-      await writeClient.fetch(
-        `*[_type == "product" && _id in $ids && !(_id in path("drafts.**"))]{ _id, name, price, inStock, stock }`,
-        { ids: [...quantities.keys()] }
-      )
-    const productMap = new Map(products.map(p => [p._id, p]))
-
-    const items: PricedItem[] = []
-    for (const [productId, quantity] of quantities) {
-      const product = productMap.get(productId)
-      if (!product) {
-        return NextResponse.json({ error: 'An item in your cart is no longer available. Please remove it and try again.' }, { status: 409 })
-      }
-      if (product.inStock === false || product.stock === 0) {
-        return NextResponse.json({ error: `${product.name} is out of stock. Please remove it from your cart.` }, { status: 409 })
-      }
-      const maxQty = Math.min(MAX_QUANTITY_PER_ITEM, product.stock ?? MAX_QUANTITY_PER_ITEM)
-      if (quantity > maxQty) {
-        return NextResponse.json({ error: `Only ${maxQty} of ${product.name} can be ordered.` }, { status: 409 })
-      }
-      items.push({ productId, name: product.name, quantity, price: product.price })
-    }
-
-    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
-    const shippingFee = getShippingFee(subtotal)
-    const totalAmount = subtotal + shippingFee
-
-    // If prices changed since the customer loaded their cart, make them review before charging a different amount
-    if (Number(expectedTotal) !== totalAmount) {
-      return NextResponse.json(
-        { error: `Prices have changed since you added these items. Your new total is ₹${totalAmount.toLocaleString('en-IN')} — please review your cart.`, code: 'PRICE_CHANGED' },
-        { status: 409 }
-      )
-    }
-
-    const orderNumber = await generateOrderNumber()
     // Secret for the order-status link — order numbers are sequential, so they alone must not unlock the page
     const accessToken = crypto.randomUUID()
+    let orderNumber: string | undefined
+    let orderId = ''
+    let items: PricedItem[] = []
+    let subtotal = 0
+    let shippingFee = 0
+    let totalAmount = 0
 
-    const order = await writeClient.create({
-      _type: 'order',
-      _id: `order.${orderNumber.toLowerCase()}.${Date.now()}`,
-      orderNumber,
-      accessToken,
-      createdAt: new Date().toISOString(),
-      customer,
-      shippingAddress,
-      items: items.map((item) => ({
-        _key: crypto.randomUUID(),
-        product: { _type: 'reference', _ref: item.productId },
-        productName: item.name,
-        quantity: item.quantity,
-        priceAtOrder: item.price,
-      })),
-      subtotal,
-      shippingFee,
-      discount: 0,
-      couponCode: '',
-      totalAmount,
-      paymentMethod,
-      paymentStatus: 'pending',
-      orderStatus: 'processing',
-      deliveryNotes: deliveryNotes || '',
-    })
+    // Read products, then save the order and reduce stock in one transaction. Each stock change is
+    // pinned to the product revision we read, so if someone else buys the same piece in between,
+    // the transaction fails and we re-check stock instead of overselling.
+    for (let attempt = 1; ; attempt++) {
+      // Prices always come from Sanity — never from the browser
+      const products: ProductRow[] = await writeClient.fetch(
+        `*[_type == "product" && _id in $ids && !(_id in path("drafts.**"))]{ _id, _rev, name, price, inStock, stock }`,
+        { ids: [...quantities.keys()] }
+      )
+      const productMap = new Map(products.map(p => [p._id, p]))
+
+      items = []
+      for (const [productId, quantity] of quantities) {
+        const product = productMap.get(productId)
+        if (!product) {
+          return NextResponse.json({ error: 'An item in your cart is no longer available. Please remove it and try again.' }, { status: 409 })
+        }
+        if (product.inStock === false || product.stock === 0) {
+          return NextResponse.json({ error: `${product.name} is out of stock. Please remove it from your cart.` }, { status: 409 })
+        }
+        const maxQty = Math.min(MAX_QUANTITY_PER_ITEM, product.stock ?? MAX_QUANTITY_PER_ITEM)
+        if (quantity > maxQty) {
+          return NextResponse.json({ error: `Only ${maxQty} of ${product.name} can be ordered.` }, { status: 409 })
+        }
+        items.push({ productId, name: product.name, quantity, price: product.price, rev: product._rev, tracksStock: typeof product.stock === 'number' })
+      }
+
+      subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+      shippingFee = getShippingFee(subtotal)
+      totalAmount = subtotal + shippingFee
+
+      // If prices changed since the customer loaded their cart, make them review before charging a different amount
+      if (Number(expectedTotal) !== totalAmount) {
+        return NextResponse.json(
+          { error: `Prices have changed since you added these items. Your new total is ₹${totalAmount.toLocaleString('en-IN')} — please review your cart.`, code: 'PRICE_CHANGED' },
+          { status: 409 }
+        )
+      }
+
+      orderNumber ??= await generateOrderNumber()
+      orderId = `order.${orderNumber.toLowerCase()}.${Date.now()}`
+
+      const transaction = writeClient.transaction().create({
+        _type: 'order',
+        _id: orderId,
+        orderNumber,
+        accessToken,
+        createdAt: new Date().toISOString(),
+        customer,
+        shippingAddress,
+        items: items.map((item) => ({
+          _key: crypto.randomUUID(),
+          product: { _type: 'reference', _ref: item.productId },
+          productName: item.name,
+          quantity: item.quantity,
+          priceAtOrder: item.price,
+        })),
+        subtotal,
+        shippingFee,
+        discount: 0,
+        couponCode: '',
+        totalAmount,
+        paymentMethod,
+        paymentStatus: 'pending',
+        orderStatus: 'processing',
+        deliveryNotes,
+      })
+      for (const item of items) {
+        // Products with a blank stock field are unlimited
+        if (item.tracksStock) {
+          transaction.patch(writeClient.patch(item.productId).ifRevisionId(item.rev).dec({ stock: item.quantity }))
+        }
+      }
+
+      try {
+        await transaction.commit()
+        break
+      } catch (err: any) {
+        // 409 = a product changed since we read it; re-check stock and try again
+        if (err?.statusCode === 409 && attempt < 3) continue
+        throw err
+      }
+    }
 
     // Send order confirmation email
     const itemsHtml = items.map((item: any) => `
@@ -154,6 +192,7 @@ export async function POST(req: NextRequest) {
       </tr>
     `).join('')
 
+    // The order is already saved — a failed email must not make the customer think it failed and order again
     await resend.emails.send({
       from: 'BeJeweled <onboarding@resend.dev>',
       to: 'siddhidokania@gmail.com', // until custom domain
@@ -245,8 +284,10 @@ export async function POST(req: NextRequest) {
         </html>
       `,
     })
+      .then(({ error }) => { if (error) console.error(`Confirmation email failed for ${orderNumber}:`, error) })
+      .catch(err => console.error(`Confirmation email failed for ${orderNumber}:`, err))
 
-    return NextResponse.json({ success: true, orderId: order._id, orderNumber, accessToken })
+    return NextResponse.json({ success: true, orderId, orderNumber, accessToken })
   } catch (err) {
     console.error('Order creation error:', err)
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })

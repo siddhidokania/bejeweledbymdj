@@ -1,9 +1,9 @@
 'use client'
 
-import { useCart } from '@/lib/cartContext'
+import { useCart, maxFor } from '@/lib/cartContext'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getShippingFee, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing'
+import { getShippingFee, FREE_SHIPPING_THRESHOLD, MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalItems, clearCart } = useCart()
@@ -59,11 +59,19 @@ export default function CartPage() {
                 <span className="text-sm w-6 text-center">{item.quantity}</span>
                 <button
                   onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                  className="w-8 h-8 border border-gray-200 flex items-center justify-center text-gray-600 hover:border-gray-900 transition"
+                  disabled={item.quantity >= maxFor(item)}
+                  className="w-8 h-8 border border-gray-200 flex items-center justify-center text-gray-600 hover:border-gray-900 transition disabled:opacity-30 disabled:hover:border-gray-200 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
               </div>
+              {item.quantity >= maxFor(item) && (
+                <p className="text-xs text-gray-400 mt-2">
+                  {item.maxQuantity !== undefined && item.maxQuantity <= MAX_QUANTITY_PER_ITEM
+                    ? `Only ${item.maxQuantity} in stock`
+                    : `Maximum ${MAX_QUANTITY_PER_ITEM} per order`}
+                </p>
+              )}
             </div>
 
             {/* Item Total + Remove */}
