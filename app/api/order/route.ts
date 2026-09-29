@@ -3,6 +3,7 @@ import { createClient } from '@sanity/client'
 import { generateOrderNumber } from '@/lib/generateOrderNumber'
 import { Resend } from 'resend'
 import { getShippingFee, MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
+import { escapeHtml as esc } from '@/lib/escapeHtml'
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -14,6 +15,10 @@ const writeClient = createClient({
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+function clean(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
 interface PricedItem {
   productId: string
   name: string
@@ -24,20 +29,37 @@ interface PricedItem {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const {
-      customer,
-      shippingAddress,
-      items: requestedItems,
-      expectedTotal,
-      paymentMethod,
-      deliveryNotes,
-    } = body
+    const { items: requestedItems, expectedTotal, paymentMethod } = body
 
-    if (!customer?.name || !customer?.email || !customer?.phone) {
+    // Keep only the fields we expect, trimmed and length-limited
+    const customer = {
+      name: clean(body.customer?.name, 100),
+      email: clean(body.customer?.email, 200).toLowerCase(),
+      phone: clean(body.customer?.phone, 20).replace(/[^\d]/g, '').replace(/^(91|0)(?=\d{10}$)/, ''),
+    }
+    const shippingAddress = {
+      line1: clean(body.shippingAddress?.line1, 200),
+      line2: clean(body.shippingAddress?.line2, 200),
+      city: clean(body.shippingAddress?.city, 100),
+      state: clean(body.shippingAddress?.state, 100),
+      pincode: clean(body.shippingAddress?.pincode, 10),
+    }
+    const deliveryNotes = clean(body.deliveryNotes, 500)
+
+    if (!customer.name || !customer.email || !customer.phone) {
       return NextResponse.json({ error: 'Missing customer details' }, { status: 400 })
     }
-    if (!shippingAddress?.line1 || !shippingAddress?.pincode) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
+      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
+    }
+    if (!/^[6-9]\d{9}$/.test(customer.phone)) {
+      return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 })
+    }
+    if (!shippingAddress.line1 || !shippingAddress.city || !shippingAddress.state || !shippingAddress.pincode) {
       return NextResponse.json({ error: 'Missing shipping address' }, { status: 400 })
+    }
+    if (!/^[1-9]\d{5}$/.test(shippingAddress.pincode)) {
+      return NextResponse.json({ error: 'Please enter a valid 6-digit pincode' }, { status: 400 })
     }
     if (!Array.isArray(requestedItems) || requestedItems.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 })
@@ -126,7 +148,7 @@ export async function POST(req: NextRequest) {
     // Send order confirmation email
     const itemsHtml = items.map((item: any) => `
       <tr>
-        <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">${item.name}</td>
+        <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">${esc(item.name)}</td>
         <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; text-align: center;">${item.quantity}</td>
         <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; text-align: right;">₹${(item.price * item.quantity).toLocaleString('en-IN')}</td>
       </tr>
@@ -149,7 +171,7 @@ export async function POST(req: NextRequest) {
           <div style="padding: 30px 0; text-align: center;">
             <p style="font-size: 12px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Order Confirmed</p>
             <h2 style="font-size: 24px; margin: 8px 0;">${orderNumber}</h2>
-            <p style="color: #555;">Thank you, ${customer.name}! Your order has been received.</p>
+            <p style="color: #555;">Thank you, ${esc(customer.name)}! Your order has been received.</p>
           </div>
 
           <div style="background: #f9f9f9; padding: 20px; margin-bottom: 24px;">
@@ -191,17 +213,17 @@ export async function POST(req: NextRequest) {
             <div style="padding: 16px; border: 1px solid #eee;">
               <p style="font-size: 11px; letter-spacing: 2px; color: #888; margin: 0 0 8px;">SHIPPING TO</p>
               <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                ${customer.name}<br/>
-                ${shippingAddress.line1}${shippingAddress.line2 ? '<br/>' + shippingAddress.line2 : ''}<br/>
-                ${shippingAddress.city}, ${shippingAddress.state}<br/>
-                ${shippingAddress.pincode}
+                ${esc(customer.name)}<br/>
+                ${esc(shippingAddress.line1)}${shippingAddress.line2 ? '<br/>' + esc(shippingAddress.line2) : ''}<br/>
+                ${esc(shippingAddress.city)}, ${esc(shippingAddress.state)}<br/>
+                ${esc(shippingAddress.pincode)}
               </p>
             </div>
             <div style="padding: 16px; border: 1px solid #eee;">
               <p style="font-size: 11px; letter-spacing: 2px; color: #888; margin: 0 0 8px;">CONTACT</p>
               <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                ${customer.email}<br/>
-                ${customer.phone}
+                ${esc(customer.email)}<br/>
+                ${esc(customer.phone)}
               </p>
             </div>
           </div>

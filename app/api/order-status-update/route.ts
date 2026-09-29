@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { parseBody } from 'next-sanity/webhook'
+import { escapeHtml as esc, safeUrl } from '@/lib/escapeHtml'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -57,12 +58,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'No customer email' })
     }
 
+    const trackingUrl = safeUrl(order.trackingUrl)
     const trackingHtml = order.trackingNumber ? `
       <div style="background: #f9f9f9; padding: 16px; margin: 20px 0; border-left: 3px solid #111;">
         <p style="margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; color: #888;">TRACKING DETAILS</p>
-        ${order.courierName ? `<p style="margin: 0 0 4px; font-size: 14px;">Courier: <strong>${order.courierName}</strong></p>` : ''}
-        <p style="margin: 0 0 4px; font-size: 14px;">Tracking Number: <strong>${order.trackingNumber}</strong></p>
-        ${order.trackingUrl ? `<a href="${order.trackingUrl}" style="color: #111; font-size: 14px;">Track your shipment →</a>` : ''}
+        ${order.courierName ? `<p style="margin: 0 0 4px; font-size: 14px;">Courier: <strong>${esc(order.courierName)}</strong></p>` : ''}
+        <p style="margin: 0 0 4px; font-size: 14px;">Tracking Number: <strong>${esc(order.trackingNumber)}</strong></p>
+        ${trackingUrl ? `<a href="${esc(trackingUrl)}" style="color: #111; font-size: 14px;">Track your shipment →</a>` : ''}
       </div>
     ` : ''
 
@@ -83,12 +85,12 @@ export async function POST(req: NextRequest) {
           <div style="padding: 30px 0; text-align: center;">
             <p style="font-size: 48px; margin: 0;">${statusInfo.emoji}</p>
             <h2 style="font-size: 22px; margin: 16px 0 8px;">Order Update</h2>
-            <p style="font-size: 13px; letter-spacing: 2px; color: #888; margin: 0;">${order.orderNumber}</p>
+            <p style="font-size: 13px; letter-spacing: 2px; color: #888; margin: 0;">${esc(order.orderNumber)}</p>
           </div>
 
           <div style="padding: 20px; background: #f9f9f9; text-align: center; margin-bottom: 24px;">
             <p style="font-size: 16px; margin: 0; line-height: 1.6;">
-              Hi ${order.customer?.name},<br/>
+              Hi ${esc(order.customer?.name)},<br/>
               ${statusInfo.message}
             </p>
           </div>
@@ -99,7 +101,7 @@ export async function POST(req: NextRequest) {
             <p style="font-size: 12px; letter-spacing: 2px; color: #888; margin: 0 0 12px;">ORDER SUMMARY</p>
             ${order.items?.map((item: any) => `
               <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
-                <span style="font-size: 14px;">${item.productName} × ${item.quantity}</span>
+                <span style="font-size: 14px;">${esc(item.productName)} × ${esc(item.quantity)}</span>
                 <span style="font-size: 14px;">₹${(item.priceAtOrder * item.quantity).toLocaleString('en-IN')}</span>
               </div>
             `).join('')}
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
 
           <div style="text-align: center; padding: 20px; background: #111; color: #fff; margin-bottom: 24px;">
             <p style="margin: 0 0 12px; font-size: 14px;">Track your order anytime</p>
-            <a href="https://bejeweledbymdj.vercel.app/order/${order.orderNumber}${order.accessToken ? `?t=${order.accessToken}` : ''}"
+            <a href="https://bejeweledbymdj.vercel.app/order/${encodeURIComponent(order.orderNumber)}${order.accessToken ? `?t=${encodeURIComponent(order.accessToken)}` : ''}"
                style="background: #fff; color: #111; padding: 10px 24px; text-decoration: none; font-size: 12px; letter-spacing: 2px;">
               VIEW ORDER STATUS
             </a>

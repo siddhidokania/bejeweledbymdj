@@ -159,6 +159,8 @@ export default function CheckoutPage() {
                   name="phone"
                   type="tel"
                   required
+                  inputMode="tel"
+                  maxLength={15}
                   value={form.phone}
                   onChange={handleChange}
                   className="w-full border border-gray-200 px-4 py-3 text-sm outline-none focus:border-gray-900 transition"
@@ -210,6 +212,10 @@ export default function CheckoutPage() {
                   <input
                     name="pincode"
                     required
+                    inputMode="numeric"
+                    pattern="[1-9][0-9]{5}"
+                    maxLength={6}
+                    title="6-digit pincode"
                     value={form.pincode}
                     onChange={handleChange}
                     className="w-full border border-gray-200 px-4 py-3 text-sm outline-none focus:border-gray-900 transition"
