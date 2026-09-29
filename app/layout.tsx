@@ -8,10 +8,12 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import AnnouncementBar from '@/components/AnnouncementBar'
 import { client } from '@/lib/sanity'
 import { ClerkProvider } from '@clerk/nextjs'
+import { SITE_URL } from '@/lib/site'
 
 const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'BeJeweled — Handcrafted Silver Jewellery',
     template: '%s | BeJeweled',
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'BeJeweled — Handcrafted Silver Jewellery',
     description: 'Shop handcrafted sterling silver jewellery for women and men.',
-    url: 'https://bejeweled.in',
+    url: SITE_URL,
     siteName: 'BeJeweled',
     locale: 'en_IN',
     type: 'website',

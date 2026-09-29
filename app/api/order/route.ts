@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { getShippingFee, MAX_QUANTITY_PER_ITEM } from '@/lib/pricing'
 import { escapeHtml as esc } from '@/lib/escapeHtml'
 import { EMAIL_FROM, SHOP_EMAIL, CAN_EMAIL_CUSTOMERS, customerRecipient } from '@/lib/email'
+import { SITE_URL } from '@/lib/site'
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -273,7 +274,7 @@ export async function POST(req: NextRequest) {
 
           <div style="text-align: center; padding: 20px; background: #111; color: #fff; margin-bottom: 24px;">
             <p style="margin: 0 0 12px; font-size: 14px;">Track your order anytime</p>
-            <a href="https://bejeweledbymdj.vercel.app/order/${orderNumber}?t=${accessToken}"
+            <a href="${SITE_URL}/order/${orderNumber}?t=${accessToken}"
                style="background: #fff; color: #111; padding: 10px 24px; text-decoration: none; font-size: 12px; letter-spacing: 2px;">
               VIEW ORDER STATUS
             </a>
